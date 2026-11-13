@@ -1,0 +1,879 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#080808">
+<title>ZED-TOK 🇿🇲</title>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#080808;color:white;font-family:Arial,sans-serif}
+button,input,textarea{font:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
+
+header{
+ height:60px;background:#111;padding:0 15px;
+ display:flex;align-items:center;justify-content:space-between;
+ position:sticky;top:0;z-index:10;border-bottom:1px solid #333
+}
+.logo{font-size:24px;font-weight:900}
+.logo span{color:#ff3159}
+.logo small{font-size:12px;color:#00d6a0}
+
+#status{text-align:center;padding:10px;color:#00d6a0;font-size:12px}
+main{max-width:600px;margin:auto;padding-bottom:90px}
+
+button.primary{
+ background:#ff3159;color:white;border:0;
+ padding:13px;border-radius:9px;font-weight:bold
+}
+button.secondary{background:#292929;color:white;border:0;padding:10px;border-radius:8px}
+input,textarea{
+ width:100%;padding:13px;margin:8px 0;
+ background:#222;color:white;border:1px solid #444;
+ border-radius:9px
+}
+.panel{background:#151515;padding:16px;margin:12px;border-radius:12px}
+
+#auth{max-width:430px;margin:65px auto;padding:15px}
+#auth h1{text-align:center;font-size:34px;margin-bottom:12px}
+#auth p{text-align:center;color:#aaa;margin:12px 0}
+.google-btn{
+ width:100%;background:white;color:#222;border:0;
+ padding:15px;border-radius:9px;font-weight:bold;
+ display:flex;justify-content:center;align-items:center;gap:12px;
+ margin-top:20px
+}
+.google-icon{font-size:21px;font-weight:900;color:#4285F4}
+
+.tabs{display:flex;justify-content:center;gap:35px;padding:16px}
+.tabs button{background:none;color:#888;border:0;padding:7px;font-weight:bold}
+.tabs button.active{color:white;border-bottom:3px solid #ff3159}
+
+.video-card{
+ height:calc(100dvh - 150px);min-height:430px;
+ max-height:780px;position:relative;background:#151515;
+ margin:9px;border-radius:12px;overflow:hidden
+}
+.video-card video{width:100%;height:100%;object-fit:contain;background:black}
+.video-info{
+ position:absolute;bottom:0;left:0;right:0;
+ padding:65px 15px 18px;
+ background:linear-gradient(transparent,#000d);
+ pointer-events:none
+}
+.video-info h3{margin-bottom:8px}
+.video-info p{font-size:14px;line-height:1.5}
+
+.actions{
+ position:absolute;right:12px;bottom:100px;
+ display:flex;flex-direction:column;gap:16px;align-items:center
+}
+.action-item{display:flex;flex-direction:column;align-items:center;gap:4px}
+.actions button{
+ width:46px;height:46px;border:0;border-radius:50%;
+ background:#292929d9;color:white;font-size:21px
+}
+.actions small{font-size:11px}
+
+.bottom-nav{
+ position:fixed;bottom:0;left:0;right:0;height:68px;
+ background:#111;border-top:1px solid #333;
+ display:flex;justify-content:space-around;align-items:center;z-index:20
+}
+.bottom-nav button{background:none;color:white;border:0;font-size:11px}
+.bottom-nav b{display:block;font-size:23px;margin-bottom:3px}
+
+.avatar{
+ width:75px;height:75px;border-radius:50%;
+ background:#ff3159;object-fit:cover;
+ display:grid;place-items:center;font-size:30px
+}
+.comment{background:#252525;padding:12px;border-radius:9px;margin:8px 0}
+.video-thumb{background:#222;padding:10px;margin:10px 0;border-radius:10px}
+.video-thumb video{width:100%;max-height:250px}
+
+#commentsPanel{
+ position:fixed;inset:0;background:#000c;
+ z-index:50;display:flex;align-items:flex-end
+}
+#commentsBox{
+ width:100%;max-width:600px;margin:auto;background:#171717;
+ padding:20px;border-radius:18px 18px 0 0;max-height:75vh;overflow:auto
+}
+#commentList{max-height:40vh;overflow:auto}
+</style>
+</head>
+
+<body>
+
+<header>
+ <div class="logo">ZED<span>-TOK</span> <small>🇿🇲</small></div>
+ <button class="secondary hidden" id="logout">Logout</button>
+</header>
+
+<div id="status">Welcome to ZED-TOK 🇿🇲</div>
+
+<!-- GOOGLE LOGIN -->
+
+<section id="auth">
+ <h1>🇿🇲 ZED-TOK</h1>
+ <p>Your Zambian video community.</p>
+
+ <div class="panel">
+  <h2 style="text-align:center">Welcome!</h2>
+  <p>Sign in or create your account using Google.</p>
+
+  <button class="google-btn" id="googleLogin">
+   <span class="google-icon">G</span>
+   Continue with Google
+  </button>
+
+  <p style="font-size:12px;margin-top:20px">
+   New users are automatically registered.
+  </p>
+ </div>
+</section>
+
+<main id="app" class="hidden">
+
+ <div class="tabs">
+  <button id="forYou" class="active">FOR YOU</button>
+  <button id="followingTab">FOLLOWING</button>
+ </div>
+
+ <section id="feed"></section>
+
+ <section id="upload" class="hidden panel">
+  <h2>Upload video 🎥</h2>
+  <p style="color:#aaa;margin:10px 0">Share your Zambian moments!</p>
+  <input type="file" id="uploadFile" accept="video/*">
+  <textarea id="caption" maxlength="300" placeholder="Write a caption..."></textarea>
+  <button class="primary" id="uploadButton" style="width:100%">Upload video</button>
+  <p id="uploadProgress"></p>
+ </section>
+
+ <section id="profile" class="hidden panel">
+  <img id="profilePhoto" class="avatar" src="" alt="Profile">
+  <h2 id="profileName"></h2>
+  <p id="profileEmail" style="color:#aaa;margin:8px 0"></p>
+  <div class="panel">
+   <h3>My account</h3>
+   <p id="profileStats" style="margin-top:10px"></p>
+  </div>
+  <h3>My videos</h3>
+  <div id="myVideos"></div>
+ </section>
+
+ <section id="search" class="hidden panel">
+  <h2>Discover Zambians 🔍</h2>
+  <input id="searchInput" placeholder="Search usernames...">
+  <div id="searchResults"></div>
+ </section>
+
+</main>
+
+<div id="commentsPanel" class="hidden">
+ <div id="commentsBox">
+  <div style="display:flex;justify-content:space-between">
+   <h3>Comments</h3>
+   <button class="secondary" id="closeComments">Close</button>
+  </div>
+  <div id="commentList"></div>
+  <input id="commentInput" placeholder="Write a comment...">
+  <button class="primary" id="sendComment" style="width:100%">Send</button>
+ </div>
+</div>
+
+<nav class="bottom-nav hidden" id="navigation">
+ <button data-page="home"><b>⌂</b>Home</button>
+ <button data-page="search"><b>⌕</b>Discover</button>
+ <button data-page="upload"><b>＋</b>Upload</button>
+ <button data-page="profile"><b>👤</b>Profile</button>
+</nav>
+
+<script type="module">
+
+/* FIREBASE IMPORTS */
+
+import {initializeApp}
+from "https://www.gstatic.com/firebasejs/13.3.0/firebase-app.js";
+
+import {
+ getAuth,
+ GoogleAuthProvider,
+ signInWithRedirect,
+ getRedirectResult,
+ signOut,
+ onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/13.3.0/firebase-auth.js";
+
+import {
+ getFirestore,
+ collection,
+ doc,
+ setDoc,
+ getDoc,
+ getDocs,
+ addDoc,
+ updateDoc,
+ query,
+ orderBy,
+ limit,
+ where,
+ onSnapshot,
+ arrayUnion,
+ arrayRemove,
+ serverTimestamp
+} from "https://www.gstatic.com/firebasejs/13.3.0/firebase-firestore.js";
+
+
+/* YOUR FIREBASE */
+
+const firebaseConfig={
+ apiKey:"AIzaSyBydk_CDIUGVokicQMZPx_LPrLwm54QsaI",
+ authDomain:"zed-10de1.firebaseapp.com",
+ projectId:"zed-10de1",
+ storageBucket:"zed-10de1.firebasestorage.app",
+ messagingSenderId:"396023412214",
+ appId:"1:396023412214:web:24480306b0d85a83c903d7",
+ measurementId:"G-MNYB7KTE4D"
+};
+
+const appFirebase=initializeApp(firebaseConfig);
+const auth=getAuth(appFirebase);
+const db=getFirestore(appFirebase);
+const googleProvider=new GoogleAuthProvider();
+
+googleProvider.setCustomParameters({
+ prompt:"select_account"
+});
+
+
+/* CLOUDINARY */
+
+const CLOUD_NAME="Zed-tok";
+const UPLOAD_PRESET="qpt8e6uh";
+
+
+/* VARIABLES */
+
+let currentUser=null;
+let currentProfile=null;
+let followingFeed=false;
+let feedUnsubscribe=null;
+let commentVideoId=null;
+
+const $=id=>document.getElementById(id);
+
+function message(t){$("status").textContent=t}
+function show(id){$(id).classList.remove("hidden")}
+function hide(id){$(id).classList.add("hidden")}
+
+function escapeHTML(v){
+ return String(v??"").replace(/[&<>"']/g,c=>({
+ "&":"&amp;","<":"&lt;",">":"&gt;",
+ '"':"&quot;","'":"&#39;"
+ })[c]);
+}
+
+function stopFeed(){
+ if(feedUnsubscribe){
+  feedUnsubscribe();
+  feedUnsubscribe=null;
+ }
+}
+
+
+/* GOOGLE SIGN IN / SIGN UP */
+
+$("googleLogin").onclick=async()=>{
+ try{
+  $("googleLogin").disabled=true;
+  message("Opening Google sign-in...");
+  await signInWithRedirect(auth,googleProvider);
+ }catch(error){
+  message(error.message);
+  $("googleLogin").disabled=false;
+ }
+};
+
+
+/* HANDLE REDIRECT RESULT */
+
+try{
+ const result=await getRedirectResult(auth);
+ if(result){
+  message("Google authentication successful!");
+ }
+}catch(error){
+ message("Google login error: "+error.message);
+ $("googleLogin").disabled=false;
+}
+
+
+/* LOGOUT */
+
+$("logout").onclick=async()=>{
+ try{
+  await signOut(auth);
+  message("Logged out successfully.");
+ }catch(error){
+  message(error.message);
+ }
+};
+
+
+/* CREATE OR LOAD GOOGLE PROFILE */
+
+async function createOrLoadProfile(user){
+
+ const userRef=doc(db,"users",user.uid);
+ const userSnapshot=await getDoc(userRef);
+
+ if(!userSnapshot.exists()){
+
+  const username=
+   user.displayName ||
+   user.email.split("@")[0];
+
+  await setDoc(userRef,{
+   uid:user.uid,
+   username:username,
+   email:user.email,
+   photoURL:user.photoURL||"",
+   following:[],
+   createdAt:serverTimestamp()
+  });
+
+  const newProfile=await getDoc(userRef);
+  return newProfile.data();
+
+ }
+
+ const oldProfile=userSnapshot.data();
+
+ // Refresh public Google profile details without overwriting follows.
+ await updateDoc(userRef,{
+  email:user.email,
+  photoURL:user.photoURL||oldProfile.photoURL||""
+ });
+
+ return {
+  ...oldProfile,
+  email:user.email,
+  photoURL:user.photoURL||oldProfile.photoURL||""
+ };
+}
+
+
+/* AUTH STATE */
+
+onAuthStateChanged(auth,async user=>{
+ currentUser=user;
+
+ if(user){
+
+  hide("auth");
+  show("app");
+  show("navigation");
+  show("logout");
+
+  try{
+   currentProfile=await createOrLoadProfile(user);
+   message("Welcome to ZED-TOK 🇿🇲");
+   loadFeed();
+   loadProfile();
+  }catch(error){
+   message("Profile error: "+error.message);
+  }
+
+ }else{
+
+  stopFeed();
+  currentProfile=null;
+
+  show("auth");
+  hide("app");
+  hide("navigation");
+  hide("logout");
+
+ }
+
+});
+
+
+/* VIDEO FEED */
+
+function loadFeed(){
+
+ stopFeed();
+ $("feed").innerHTML="<div class='panel'>Loading videos...</div>";
+
+ const q=query(
+  collection(db,"videos"),
+  orderBy("createdAt","desc"),
+  limit(40)
+ );
+
+ feedUnsubscribe=onSnapshot(q,snapshot=>{
+
+  $("feed").innerHTML="";
+
+  let videos=snapshot.docs.map(d=>({
+   id:d.id,...d.data()
+  }));
+
+  if(followingFeed){
+   const following=currentProfile.following||[];
+   videos=videos.filter(v=>following.includes(v.uid));
+  }
+
+  if(!videos.length){
+   $("feed").innerHTML=`
+    <div class="panel" style="text-align:center;padding:40px">
+     <h2>🇿🇲 No videos yet</h2>
+     <p style="margin-top:10px;color:#aaa">Be the first to upload!</p>
+    </div>`;
+   return;
+  }
+
+  videos.forEach(renderVideo);
+
+ },error=>message(error.message));
+
+}
+
+
+/* DISPLAY VIDEO */
+
+function renderVideo(video){
+
+ const likes=video.likes||[];
+ const liked=likes.includes(currentUser.uid);
+ const following=(currentProfile.following||[]).includes(video.uid);
+
+ const card=document.createElement("article");
+ card.className="video-card";
+
+ card.innerHTML=`
+  <video src="${escapeHTML(video.videoUrl)}"
+   controls loop playsinline preload="metadata"></video>
+
+  <div class="video-info">
+   <h3>@${escapeHTML(video.username)}</h3>
+   <p>${escapeHTML(video.caption)}</p>
+   <p style="margin-top:8px">🇿🇲 Zambia</p>
+  </div>
+
+  <div class="actions">
+   <div class="action-item">
+    <button class="likeButton">${liked?"❤️":"🤍"}</button>
+    <small>${likes.length}</small>
+   </div>
+   <div class="action-item">
+    <button class="commentButton">💬</button>
+    <small>Comment</small>
+   </div>
+   <div class="action-item">
+    <button class="followButton">
+     ${video.uid===currentUser.uid?"👤":following?"✓":"＋"}
+    </button>
+    <small>Follow</small>
+   </div>
+   <div class="action-item">
+    <button class="shareButton">↗</button>
+    <small>Share</small>
+   </div>
+  </div>
+ `;
+
+ card.querySelector(".likeButton").onclick=()=>toggleLike(video.id,liked);
+ card.querySelector(".commentButton").onclick=()=>openComments(video.id);
+ card.querySelector(".followButton").onclick=()=>followUser(video.uid);
+ card.querySelector(".shareButton").onclick=()=>shareVideo(video.id);
+
+ const player=card.querySelector("video");
+ player.addEventListener("play",()=>{
+  document.querySelectorAll(".video-card video").forEach(v=>{
+   if(v!==player)v.pause();
+  });
+ });
+
+ $("feed").appendChild(card);
+}
+
+
+/* LIKES */
+
+async function toggleLike(id,liked){
+ try{
+  await updateDoc(doc(db,"videos",id),{
+   likes:liked
+    ?arrayRemove(currentUser.uid)
+    :arrayUnion(currentUser.uid)
+  });
+ }catch(error){
+  message(error.message);
+ }
+}
+
+
+/* COMMENTS */
+
+async function openComments(id){
+
+ commentVideoId=id;
+ show("commentsPanel");
+ $("commentList").textContent="Loading comments...";
+
+ try{
+  const q=query(
+   collection(db,"videos",id,"comments"),
+   orderBy("createdAt","asc"),
+   limit(50)
+  );
+
+  const snapshot=await getDocs(q);
+  $("commentList").innerHTML="";
+
+  if(snapshot.empty){
+   $("commentList").textContent="No comments yet.";
+  }
+
+  snapshot.forEach(d=>{
+   const c=d.data();
+   const item=document.createElement("div");
+   item.className="comment";
+   item.innerHTML=`
+    <b>@${escapeHTML(c.username)}</b>
+    <p style="margin-top:6px">${escapeHTML(c.text)}</p>`;
+   $("commentList").appendChild(item);
+  });
+
+ }catch(error){
+  message(error.message);
+ }
+}
+
+$("closeComments").onclick=()=>hide("commentsPanel");
+
+$("sendComment").onclick=async()=>{
+
+ const text=$("commentInput").value.trim();
+ if(!text||!commentVideoId)return;
+
+ try{
+  await addDoc(
+   collection(db,"videos",commentVideoId,"comments"),
+   {
+    uid:currentUser.uid,
+    username:currentProfile.username,
+    text,
+    createdAt:serverTimestamp()
+   }
+  );
+
+  $("commentInput").value="";
+  await openComments(commentVideoId);
+
+ }catch(error){
+  message(error.message);
+ }
+
+};
+
+
+/* FOLLOW */
+
+async function followUser(uid){
+
+ if(uid===currentUser.uid){
+  message("You cannot follow yourself.");
+  return;
+ }
+
+ const following=currentProfile.following||[];
+
+ if(following.includes(uid)){
+  message("Already following this creator.");
+  return;
+ }
+
+ try{
+  await updateDoc(doc(db,"users",currentUser.uid),{
+   following:arrayUnion(uid)
+  });
+
+  currentProfile.following=[...following,uid];
+  message("Following creator!");
+
+  loadProfile();
+
+ }catch(error){
+  message(error.message);
+ }
+
+}
+
+
+/* SHARE */
+
+async function shareVideo(id){
+
+ const url=location.href.split("#")[0]+"#video-"+id;
+
+ try{
+  if(navigator.share){
+   await navigator.share({
+    title:"ZED-TOK 🇿🇲",
+    text:"Watch this Zambian video!",
+    url
+   });
+  }else{
+   await navigator.clipboard.writeText(url);
+   message("Video link copied!");
+  }
+ }catch(error){
+  if(error.name!=="AbortError")message("Share failed.");
+ }
+
+}
+
+
+/* CLOUDINARY VIDEO UPLOAD */
+
+$("uploadButton").onclick=async()=>{
+
+ const file=$("uploadFile").files[0];
+ const caption=$("caption").value.trim();
+
+ if(!file){
+  message("Choose a video.");
+  return;
+ }
+
+ if(!file.type.startsWith("video/")){
+  message("Invalid video file.");
+  return;
+ }
+
+ if(file.size>100*1024*1024){
+  message("Maximum size is 100 MB.");
+  return;
+ }
+
+ const button=$("uploadButton");
+ const progress=$("uploadProgress");
+
+ button.disabled=true;
+ button.textContent="Uploading...";
+
+ try{
+
+  const data=new FormData();
+  data.append("file",file);
+  data.append("upload_preset",UPLOAD_PRESET);
+  data.append("folder","zedtok");
+
+  progress.textContent="Uploading to Cloudinary...";
+
+  const response=await fetch(
+   `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/video/upload`,
+   {method:"POST",body:data}
+  );
+
+  const result=await response.json();
+
+  if(!response.ok){
+   throw Error(result.error?.message||"Upload failed.");
+  }
+
+  await addDoc(collection(db,"videos"),{
+   uid:currentUser.uid,
+   username:currentProfile.username,
+   caption,
+   videoUrl:result.secure_url,
+   publicId:result.public_id,
+   likes:[],
+   createdAt:serverTimestamp()
+  });
+
+  $("uploadFile").value="";
+  $("caption").value="";
+
+  progress.textContent="Video uploaded! 🇿🇲";
+  message("Your video is now live!");
+
+  openPage("home");
+
+ }catch(error){
+  progress.textContent=error.message;
+  message(error.message);
+ }finally{
+  button.disabled=false;
+  button.textContent="Upload video";
+ }
+
+};
+
+
+/* PROFILE */
+
+async function loadProfile(){
+
+ if(!currentUser||!currentProfile)return;
+
+ $("profileName").textContent="@"+currentProfile.username;
+ $("profileEmail").textContent=currentProfile.email;
+
+ $("profilePhoto").src=
+ currentProfile.photoURL||"";
+
+ try{
+
+  const q=query(
+   collection(db,"videos"),
+   where("uid","==",currentUser.uid)
+  );
+
+  const snapshot=await getDocs(q);
+
+  $("profileStats").textContent=
+   snapshot.size+" videos • "+
+   (currentProfile.following||[]).length+" following";
+
+  $("myVideos").innerHTML="";
+
+  snapshot.forEach(d=>{
+
+   const v=d.data();
+   const item=document.createElement("div");
+   item.className="video-thumb";
+
+   item.innerHTML=`
+    <p>${escapeHTML(v.caption)}</p>
+    <video src="${escapeHTML(v.videoUrl)}"
+     controls playsinline></video>
+    <small>${(v.likes||[]).length} likes</small>`;
+
+   $("myVideos").appendChild(item);
+
+  });
+
+ }catch(error){
+  message(error.message);
+ }
+
+}
+
+
+/* SEARCH USERS */
+
+$("searchInput").oninput=async()=>{
+
+ const value=$("searchInput").value.trim().toLowerCase();
+ const output=$("searchResults");
+
+ if(!value){
+  output.innerHTML="";
+  return;
+ }
+
+ output.textContent="Searching...";
+
+ try{
+
+  const snapshot=await getDocs(
+   query(collection(db,"users"),limit(100))
+  );
+
+  output.innerHTML="";
+
+  snapshot.forEach(d=>{
+
+   const u=d.data();
+
+   if(u.username&&u.username.toLowerCase().includes(value)){
+
+    const item=document.createElement("div");
+    item.className="comment";
+
+    const name=document.createElement("b");
+    name.textContent="@"+u.username;
+
+    const button=document.createElement("button");
+    button.className="primary";
+    button.textContent="Follow";
+    button.style.marginLeft="10px";
+    button.onclick=()=>followUser(u.uid);
+
+    item.append(name,button);
+    output.appendChild(item);
+
+   }
+
+  });
+
+  if(!output.children.length){
+   output.textContent="No users found.";
+  }
+
+ }catch(error){
+  message(error.message);
+ }
+
+};
+
+
+/* NAVIGATION */
+
+function openPage(page){
+
+ stopFeed();
+
+ ["feed","upload","profile","search"].forEach(hide);
+
+ if(page==="home"){
+  show("feed");
+  loadFeed();
+ }
+
+ if(page==="upload")show("upload");
+
+ if(page==="profile"){
+  show("profile");
+  loadProfile();
+ }
+
+ if(page==="search")show("search");
+
+ window.scrollTo(0,0);
+}
+
+document.querySelectorAll(".bottom-nav button").forEach(button=>{
+ button.onclick=()=>openPage(button.dataset.page);
+});
+
+$("forYou").onclick=()=>{
+ followingFeed=false;
+ $("forYou").classList.add("active");
+ $("followingTab").classList.remove("active");
+ loadFeed();
+};
+
+$("followingTab").onclick=()=>{
+ followingFeed=true;
+ $("followingTab").classList.add("active");
+ $("forYou").classList.remove("active");
+ loadFeed();
+};
+
+message("ZED-TOK is ready 🇿🇲");
+
+</script>
+</body>
+</html>
